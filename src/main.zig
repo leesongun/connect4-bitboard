@@ -9,27 +9,27 @@ pub fn main() !void {
 
     while (true) {
         const player_str = "OX"[current_player];
-        try stdout.print("Player {c}'s turn. Enter column (1-7): ", .{player_str});
+        try stdout.print("\rPlayer {c}'s turn. Enter column (1-7): ", .{player_str});
+
         var buf: [1]u8 = undefined;
         const bytes_read = try std.io.getStdIn().readAll(&buf);
-
         if (bytes_read == 0) {
             try stdout.print("Error reading input\n", .{});
             continue;
         }
 
         const input_char = buf[0];
-
-        if (input_char >= '1' and input_char <= '7') {
-            const col: u3 = @intCast(input_char - '1');
-            current_state = lib.play_column(current_state, col) catch {
-                try stdout.print("Invalid move. Column is full.\n", .{});
-                continue;
-            };
-        } else {
-            try stdout.print("Invalid input. Please enter a number between 1 and 7.\n", .{});
+        if (input_char < '1' or input_char > '7') {
+            if (!std.ascii.isWhitespace(input_char))
+                try stdout.print("Invalid input. Please enter a number between 1 and 7.\n", .{});
             continue;
         }
+
+        const col: u3 = @intCast(input_char - '1');
+        current_state = lib.play_column(current_state, col) catch {
+            try stdout.print("Invalid move. Column is full.\n", .{});
+            continue;
+        };
 
         const board_str = lib.print_board(current_state, player_str, "XO"[current_player]);
         const column_str = lib.print_playable_columns(current_state);
