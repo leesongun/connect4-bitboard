@@ -1,18 +1,26 @@
 const std = @import("std");
-const lib = @import("root.zig");
+const lib = @import("connect4");
 
-pub fn main() !void {
-    var stdout = std.io.getStdOut().writer();
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_file = std.Io.File.stdout().writerStreaming(io, &stdout_buffer);
+    const stdout = &stdout_file.interface;
 
-    var current_state: lib.connect4 = lib.initial_state;
+    var stdin_buffer: [1024]u8 = undefined;
+    var stdin_file = std.Io.File.stdin().readerStreaming(io, &stdin_buffer);
+    const stdin = &stdin_file.interface;
+
+    var current_state = lib.initial_state;
     var current_player: u1 = 0;
 
     while (true) {
         const player_str = "OX"[current_player];
         try stdout.print("\rPlayer {c}'s turn. Enter column (1-7): ", .{player_str});
+        try stdout.flush();
 
         var buf: [1]u8 = undefined;
-        const bytes_read = try std.io.getStdIn().readAll(&buf);
+        const bytes_read = try stdin.readSliceShort(&buf);
         if (bytes_read == 0) {
             try stdout.print("Error reading input\n", .{});
             continue;
@@ -47,4 +55,6 @@ pub fn main() !void {
         current_state = lib.invert_player(current_state);
         current_player ^= 1;
     }
+
+    try stdout.flush();
 }
